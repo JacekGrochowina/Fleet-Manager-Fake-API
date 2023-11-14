@@ -8,6 +8,8 @@ import { v4 as uuidv4 } from 'uuid';
 import { SuccessHandler } from '../../shared/services/success-handler.js';
 import { DelayHandler } from '../../shared/services/delay-handler.js';
 import { ApiParamsBuilder } from '../../shared/services/api-params-builder.js';
+import PDFDocument from 'pdfkit';
+import Excel from 'exceljs';
 
 export class Vehicles {
   public static list: VehicleInterface[] = VEHICLES_DATA;
@@ -36,6 +38,16 @@ export class Vehicles {
     Server.app.delete(
       VehiclesRoutes.remove(),
       (req: Request, res: Response) => DelayHandler.delay(() => this.remove(req, res)),
+    );
+
+    Server.app.get(
+      VehiclesRoutes.exportToPDF(),
+      (req: Request, res: Response) => DelayHandler.delay(() => this.exportToPDF(req, res)),
+    );
+
+    Server.app.get(
+      VehiclesRoutes.exportToXLSX(),
+      (req: Request, res: Response) => DelayHandler.delay(() => this.exportToXLSX(req, res)),
     );
   }
 
@@ -94,5 +106,91 @@ export class Vehicles {
 
     this.list.splice(index, 1);
     SuccessHandler.handleOk(res);
+  }
+
+  private static exportToPDF(_req: Request, res: Response): void {
+    const fontRegularPath = 'src/assets/fonts/roboto/Roboto-Regular.ttf';
+    const fontBoldPath = 'src/assets/fonts/roboto/Roboto-Bold.ttf';
+
+    const doc = new PDFDocument();
+
+    doc.fontSize(18).font(fontBoldPath).text('Lista pojazdów', { align: 'center' }).moveDown();
+    doc.fontSize(11).font(fontRegularPath);
+
+    this.list.forEach((vehicle) => {
+      doc.text(`ID: ${vehicle.id}`);
+      doc.text(`Marka: ${vehicle.brand}`);
+      doc.text(`Model: ${vehicle.model}`);
+      doc.text(`Rok produkcji: ${vehicle.year}`);
+      doc.text(`Numer rejestracyjny: ${vehicle.registrationNumber}`);
+      doc.text(`Typ: ${vehicle.type}`);
+      doc.text(`Status: ${vehicle.status}`);
+      doc.text(`Kierowca: ${vehicle.driverId}`);
+      doc.moveDown();
+    });
+
+    res.setHeader('Content-Type', 'application/pdf; charset=utf-8');
+    res.setHeader('Content-Disposition', 'inline; filename=drivers-list.pdf');
+
+    doc.pipe(res);
+    doc.end();
+  }
+
+  private static exportToXLSX(_req: Request, res: Response): void {
+    const workbook = new Excel.Workbook();
+
+    workbook.creator = 'Fleet Manager App';
+    workbook.lastModifiedBy = 'Fleet Manager App';
+    workbook.created = new Date();
+    workbook.modified = new Date();
+    workbook.lastPrinted = new Date();
+    workbook.properties.date1904 = true;
+
+    workbook.views = [
+      {
+        x: 0, y: 0, width: 10000, height: 20000,
+        firstSheet: 0, activeTab: 1, visibility: 'visible'
+      }
+    ];
+    const worksheet = workbook.addWorksheet('Pojazdy');
+    worksheet.columns = [
+      { header: 'ID', key: 'id' },
+      { header: 'Marka', key: 'brand' },
+      { header: 'Model', key: 'model' },
+      { header: 'Rok produkcji', key: 'year' },
+      { header: 'Numer rejestracyjny', key: 'registrationNumber' },
+      { header: 'Typ: prawa jazdy', key: 'type' },
+      { header: 'Status', key: 'status' },
+      { header: 'Kierowca', key: 'driverId' },
+    ];
+
+    this.list.forEach(({
+       id,
+       brand,
+       model,
+       year,
+       registrationNumber,
+       type,
+       status,
+       driverId,
+    }) => {
+      worksheet.addRow({
+        id,
+        brand,
+        model,
+        year,
+        registrationNumber,
+        type,
+        status,
+        driverId,
+      });
+    });
+
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename=' + 'Report.xlsx');
+    workbook.xlsx.write(res)
+      .then(function () {
+        res.end();
+      });
   }
 }
