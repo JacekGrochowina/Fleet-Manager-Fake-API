@@ -10,8 +10,8 @@ import cors from 'cors';
 import 'dotenv/config';
 
 export class Server {
-  public static jwtAuthEnable: boolean = true;
-  public static requestDelayEnable: boolean = true;
+  public static jwtAuthEnable: boolean = this.getInitBooleanFronEnv('JWT_AUTH');
+  public static requestDelayEnable: boolean = this.getInitBooleanFronEnv('REQUEST_DELAY_ENABLE');
   public static port: number = Number(process.env.PORT) || 8080;
   public static app: Express;
 
@@ -48,6 +48,10 @@ export class Server {
         ? DelayHandler.delay(() => handler(req, res))
         : handler(req, res),
     );
+  }
+
+  private static getInitBooleanFronEnv(key: string): boolean {
+    return process.env[key] === 'true';
   }
 
   private static appConfigure(): void {
