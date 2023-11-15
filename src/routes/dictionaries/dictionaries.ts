@@ -18,19 +18,19 @@ export class Dictionaries {
   private static readonly orderStatusDictionary: Dictionary[] = this.parseEnumToDictionary(OrderStatus);
 
   public static routes(): void {
-    Server.app.get(
+    Server.createEndpoint('GET',
       DictionariesRoutes.getVehicleType(),
       (req: Request, res: Response) => DelayHandler.delay(() =>
         this.getDictionary(req, res, this.vehicleTypeDictionary)),
     );
 
-    Server.app.get(
+    Server.createEndpoint('GET',
       DictionariesRoutes.getVehicleStatus(),
       (req: Request, res: Response) => DelayHandler.delay(() =>
         this.getDictionary(req, res, this.vehicleStatusDictionary)),
     );
 
-    Server.app.get(
+    Server.createEndpoint('GET',
       DictionariesRoutes.getOrderStatus(),
       (req: Request, res: Response) => DelayHandler.delay(() =>
         this.getDictionary(req, res, this.orderStatusDictionary)),
