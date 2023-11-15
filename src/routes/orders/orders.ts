@@ -15,37 +15,37 @@ export class Orders {
   public static list: OrderInterface[] = ORDERS_DATA;
 
   public static routes(): void {
-    Server.app.get(
+    Server.createEndpoint('GET',
       OrdersRoutes.getList(),
       (req: Request, res: Response) => DelayHandler.delay(() => this.getList(req, res)),
     );
 
-    Server.app.get(
+    Server.createEndpoint('GET',
       OrdersRoutes.getDetails(),
       (req: Request, res: Response) => DelayHandler.delay(() => this.getDetails(req, res)),
     );
 
-    Server.app.post(
+    Server.createEndpoint('POST',
       OrdersRoutes.add(),
       (req: Request, res: Response) => DelayHandler.delay(() => this.add(req, res)),
     );
 
-    Server.app.put(
+    Server.createEndpoint('PUT',
       OrdersRoutes.update(),
       (req: Request, res: Response) => DelayHandler.delay(() => this.update(req, res)),
     );
 
-    Server.app.delete(
+    Server.createEndpoint('DELETE',
       OrdersRoutes.remove(),
       (req: Request, res: Response) => DelayHandler.delay(() => this.remove(req, res)),
     );
 
-    Server.app.get(
+    Server.createEndpoint('GET',
       OrdersRoutes.exportToPDF(),
       (req: Request, res: Response) => DelayHandler.delay(() => this.exportToPDF(req, res)),
     );
 
-    Server.app.get(
+    Server.createEndpoint('GET',
       OrdersRoutes.exportToXLSX(),
       (req: Request, res: Response) => DelayHandler.delay(() => this.exportToXLSX(req, res)),
     );

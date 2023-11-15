@@ -15,37 +15,37 @@ export class Vehicles {
   public static list: VehicleInterface[] = VEHICLES_DATA;
 
   public static routes(): void {
-    Server.app.get(
+    Server.createEndpoint('GET',
       VehiclesRoutes.getList(),
       (req: Request, res: Response) => DelayHandler.delay(() => this.getList(req, res)),
     );
 
-    Server.app.get(
+    Server.createEndpoint('GET',
       VehiclesRoutes.getDetails(),
       (req: Request, res: Response) => DelayHandler.delay(() => this.getDetails(req, res)),
     );
 
-    Server.app.post(
+    Server.createEndpoint('POST',
       VehiclesRoutes.add(),
       (req: Request, res: Response) => DelayHandler.delay(() => this.add(req, res)),
     );
 
-    Server.app.put(
+    Server.createEndpoint('PUT',
       VehiclesRoutes.update(),
       (req: Request, res: Response) => DelayHandler.delay(() => this.update(req, res)),
     );
 
-    Server.app.delete(
+    Server.createEndpoint('DELETE',
       VehiclesRoutes.remove(),
       (req: Request, res: Response) => DelayHandler.delay(() => this.remove(req, res)),
     );
 
-    Server.app.get(
+    Server.createEndpoint('GET',
       VehiclesRoutes.exportToPDF(),
       (req: Request, res: Response) => DelayHandler.delay(() => this.exportToPDF(req, res)),
     );
 
-    Server.app.get(
+    Server.createEndpoint('GET',
       VehiclesRoutes.exportToXLSX(),
       (req: Request, res: Response) => DelayHandler.delay(() => this.exportToXLSX(req, res)),
     );
