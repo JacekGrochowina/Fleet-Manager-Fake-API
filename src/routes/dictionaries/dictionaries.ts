@@ -3,7 +3,6 @@ import { VehicleStatus, VehicleType } from '../vehicles/vehicles-data.js';
 import { Server } from '../../base/base.js';
 import { DictionariesRoutes } from './dictionaries-routes.js';
 import { Request, Response } from 'express';
-import { DelayHandler } from '../../shared/services/delay-handler.js';
 import { OrderStatus } from '../orders/orders-data.js';
 
 export interface Dictionary {
@@ -20,20 +19,17 @@ export class Dictionaries {
   public static routes(): void {
     Server.createEndpoint('GET',
       DictionariesRoutes.getVehicleType(),
-      (req: Request, res: Response) => DelayHandler.delay(() =>
-        this.getDictionary(req, res, this.vehicleTypeDictionary)),
+      (req: Request, res: Response) => this.getDictionary(req, res, this.vehicleTypeDictionary),
     );
 
     Server.createEndpoint('GET',
       DictionariesRoutes.getVehicleStatus(),
-      (req: Request, res: Response) => DelayHandler.delay(() =>
-        this.getDictionary(req, res, this.vehicleStatusDictionary)),
+      (req: Request, res: Response) => this.getDictionary(req, res, this.vehicleStatusDictionary),
     );
 
     Server.createEndpoint('GET',
       DictionariesRoutes.getOrderStatus(),
-      (req: Request, res: Response) => DelayHandler.delay(() =>
-        this.getDictionary(req, res, this.orderStatusDictionary)),
+      (req: Request, res: Response) => this.getDictionary(req, res, this.orderStatusDictionary),
     );
   }
 

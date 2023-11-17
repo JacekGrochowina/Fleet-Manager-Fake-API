@@ -1,13 +1,15 @@
 import express, { Express, NextFunction, Request, Response } from 'express';
-import { Dictionaries } from '../routes/dictionaries/index.js';
-import { Vehicles } from '../routes/vehicles/index.js';
-import { Drivers } from '../routes/drivers/index.js';
-import { Orders } from '../routes/orders/index.js';
+import { Dictionaries } from '../routes/dictionaries/dictionaries.js';
+import { Vehicles } from '../routes/vehicles/vehicles.js';
+import { Drivers } from '../routes/drivers/drivers.js';
+import { Orders } from '../routes/orders/orders.js';
 import { DelayHandler } from '../shared/services/delay-handler.js';
 import { authMiddleware } from '../shared/services/auth-middleware.js';
 import bodyParser from 'body-parser';
 import cors from 'cors';
 import 'dotenv/config';
+import { HttpMethods } from '../shared/types/http-methods.type.js';
+import { Auth } from '../routes/auth/auth.js';
 
 export class Server {
   public static jwtAuthEnable: boolean = this.getInitBooleanFromEnv('JWT_AUTH');
@@ -25,14 +27,16 @@ export class Server {
     Vehicles.routes();
     Drivers.routes();
     Orders.routes();
+    if(this.jwtAuthEnable) Auth.routes();
   }
 
   public static createEndpoint(
-    method: 'GET' | 'POST' | 'PUT' | 'DELETE',
+    method: HttpMethods,
     path: string,
-    handler: (req: Request, res: Response) => void
+    handler: (req: Request, res: Response) => void,
+    isAuth: boolean = false,
   ): void {
-    const middlewares = this.jwtAuthEnable ? [authMiddleware] : [];
+    const middlewares = this.jwtAuthEnable && !isAuth ? [authMiddleware] : [];
 
     const delayedMiddlewares = this.requestDelayEnable
       ? middlewares.map((middleware) =>

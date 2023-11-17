@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export class DriverSchema {
+export class DriversSchema {
   public static driver = () =>
     z.object({
       id: z.string(),

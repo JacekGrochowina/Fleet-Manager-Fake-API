@@ -3,7 +3,7 @@ import jwt, { JwtPayload } from 'jsonwebtoken';
 import { ErrorHandler } from './error-handler.js';
 
 export const authMiddleware = (req: Request, res: Response, next: NextFunction): void => {
-  const token: string | undefined = req.header("auth-token");
+  const token: string | undefined = req.header('auth-token');
 
   if (!token) {
     ErrorHandler.handleUnauthorized(res);

@@ -1,7 +1,7 @@
 import { z } from 'zod';
-import { VehicleStatus, VehicleType } from '../vehicles-data.js';
+import { VehicleStatus, VehicleType } from './vehicles-data.js';
 
-export class VehicleSchema {
+export class VehiclesSchema {
   public static vehicle = () =>
     z.object({
       id: z.string(),

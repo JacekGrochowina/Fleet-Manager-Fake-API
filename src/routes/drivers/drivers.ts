@@ -1,14 +1,13 @@
 import { Server } from '../../base/base.js';
 import { Request, Response } from 'express';
-import { DelayHandler } from '../../shared/services/delay-handler.js';
 import { ApiParamsBuilder } from '../../shared/services/api-params-builder.js';
 import { ErrorHandler } from '../../shared/services/error-handler.js';
 import { v4 as uuidv4 } from 'uuid';
 import { SuccessHandler } from '../../shared/services/success-handler.js';
 import { DriverInterface, DRIVERS_DATA } from './drivers-data.js';
 import { DriversRoutes } from './drivers-routes.js';
-import { DriverSchema } from './schemas/driver.schema.js';
-import { Vehicles } from '../vehicles/index.js';
+import { DriversSchema } from './drivers-schema.js';
+import { Vehicles } from '../vehicles/vehicles.js';
 import PDFDocument from 'pdfkit';
 import Excel from 'exceljs';
 
@@ -18,37 +17,37 @@ export class Drivers {
   public static routes(): void {
     Server.createEndpoint('GET',
       DriversRoutes.getList(),
-      (req: Request, res: Response) => this.getList(req, res)
+      (req: Request, res: Response) => this.getList(req, res),
     );
 
     Server.createEndpoint('GET',
       DriversRoutes.getDetails(),
-      (req: Request, res: Response) => DelayHandler.delay(() => this.getDetails(req, res)),
+      (req: Request, res: Response) => this.getDetails(req, res),
     );
 
     Server.createEndpoint('POST',
       DriversRoutes.add(),
-      (req: Request, res: Response) => DelayHandler.delay(() => this.add(req, res)),
+      (req: Request, res: Response) => this.add(req, res),
     );
 
     Server.createEndpoint('PUT',
       DriversRoutes.update(),
-      (req: Request, res: Response) => DelayHandler.delay(() => this.update(req, res)),
+      (req: Request, res: Response) => this.update(req, res),
     );
 
     Server.createEndpoint('DELETE',
       DriversRoutes.remove(),
-      (req: Request, res: Response) => DelayHandler.delay(() => this.remove(req, res)),
+      (req: Request, res: Response) => this.remove(req, res),
     );
 
     Server.createEndpoint('GET',
       DriversRoutes.exportToPDF(),
-      (req: Request, res: Response) => DelayHandler.delay(() => this.exportToPDF(req, res)),
+      (req: Request, res: Response) => this.exportToPDF(req, res),
     );
 
     Server.createEndpoint('GET',
       DriversRoutes.exportToXLSX(),
-      (req: Request, res: Response) => DelayHandler.delay(() => this.exportToXLSX(req, res)),
+      (req: Request, res: Response) => this.exportToXLSX(req, res),
     );
   }
 
@@ -69,7 +68,7 @@ export class Drivers {
 
   private static add(req: Request, res: Response): void {
     try {
-      const newItem = DriverSchema.driver().parse({
+      const newItem = DriversSchema.driver().parse({
         id: uuidv4(),
         ...req.body,
       });
@@ -89,7 +88,7 @@ export class Drivers {
     if (index === -1) return ErrorHandler.handleNotFound(res);
 
     try {
-      const updatedItem = DriverSchema.updateDriver().parse(req.body);
+      const updatedItem = DriversSchema.updateDriver().parse(req.body);
       this.list[index] = <DriverInterface><unknown>{ id, ...updatedItem };
       SuccessHandler.handleOk(res);
     } catch (error) {
@@ -128,12 +127,12 @@ export class Drivers {
 
     this.list.forEach((driver) => {
       doc.text(`ID: ${driver.id}`);
-      doc.text(`Imię: ${driver.firstName}`);
-      doc.text(`Nazwisko: ${driver.lastName}`);
-      doc.text(`Telefon: ${driver.phoneNumber}`);
+      doc.text(`Name: ${driver.firstName}`);
+      doc.text(`Surname: ${driver.lastName}`);
+      doc.text(`Phone: ${driver.phoneNumber}`);
       doc.text(`Email: ${driver.email}`);
-      doc.text(`Numer prawa jazdy: ${driver.drivingLicenseNumber}`);
-      doc.text(`Data urodzin: ${driver.birthDate}`);
+      doc.text(`Driving License Number: ${driver.drivingLicenseNumber}`);
+      doc.text(`Birthdate: ${driver.birthDate}`);
       doc.moveDown();
     });
 
@@ -160,15 +159,15 @@ export class Drivers {
         firstSheet: 0, activeTab: 1, visibility: 'visible'
       }
     ];
-    const worksheet = workbook.addWorksheet('Kierowcy');
+    const worksheet = workbook.addWorksheet('Drivers');
     worksheet.columns = [
       { header: 'ID', key: 'id' },
-      { header: 'Imię', key: 'firstName' },
-      { header: 'Nazwisko', key: 'lastName' },
-      { header: 'Telefon', key: 'phoneNumber' },
+      { header: 'Name', key: 'firstName' },
+      { header: 'Surname', key: 'lastName' },
+      { header: 'Phone', key: 'phoneNumber' },
       { header: 'Email', key: 'email' },
-      { header: 'Numer prawa jazdy', key: 'drivingLicenseNumber' },
-      { header: 'Data urodzin', key: 'birthDate' },
+      { header: 'Driving License Number', key: 'drivingLicenseNumber' },
+      { header: 'Birthdate', key: 'birthDate' },
     ];
 
     this.list.forEach(({

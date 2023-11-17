@@ -1,7 +1,7 @@
 import { z } from 'zod';
-import { OrderStatus } from '../orders-data.js';
+import { OrderStatus } from './orders-data.js';
 
-export class OrderSchema {
+export class OrdersSchema {
   public static order = () =>
     z.object({
       id: z.string(),

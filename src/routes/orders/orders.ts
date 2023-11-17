@@ -1,15 +1,16 @@
 import { OrderInterface, ORDERS_DATA } from './orders-data.js';
 import { Server } from '../../base/base.js';
 import { Request, Response } from 'express';
-import { DelayHandler } from '../../shared/services/delay-handler.js';
 import { OrdersRoutes } from './orders-routes.js';
 import { ApiParamsBuilder } from '../../shared/services/api-params-builder.js';
 import { ErrorHandler } from '../../shared/services/error-handler.js';
-import { OrderSchema } from './schemas/order.schema.js';
+import { OrdersSchema } from './orders-schema.js';
 import { v4 as uuidv4 } from 'uuid';
 import { SuccessHandler } from '../../shared/services/success-handler.js';
 import PDFDocument from 'pdfkit';
 import Excel from 'exceljs';
+import { Vehicles } from '../vehicles/vehicles.js';
+import { Drivers } from '../drivers/drivers.js';
 
 export class Orders {
   public static list: OrderInterface[] = ORDERS_DATA;
@@ -17,37 +18,37 @@ export class Orders {
   public static routes(): void {
     Server.createEndpoint('GET',
       OrdersRoutes.getList(),
-      (req: Request, res: Response) => DelayHandler.delay(() => this.getList(req, res)),
+      (req: Request, res: Response) => this.getList(req, res),
     );
 
     Server.createEndpoint('GET',
       OrdersRoutes.getDetails(),
-      (req: Request, res: Response) => DelayHandler.delay(() => this.getDetails(req, res)),
+      (req: Request, res: Response) => this.getDetails(req, res),
     );
 
     Server.createEndpoint('POST',
       OrdersRoutes.add(),
-      (req: Request, res: Response) => DelayHandler.delay(() => this.add(req, res)),
+      (req: Request, res: Response) => this.add(req, res),
     );
 
     Server.createEndpoint('PUT',
       OrdersRoutes.update(),
-      (req: Request, res: Response) => DelayHandler.delay(() => this.update(req, res)),
+      (req: Request, res: Response) => this.update(req, res),
     );
 
     Server.createEndpoint('DELETE',
       OrdersRoutes.remove(),
-      (req: Request, res: Response) => DelayHandler.delay(() => this.remove(req, res)),
+      (req: Request, res: Response) => this.remove(req, res),
     );
 
     Server.createEndpoint('GET',
       OrdersRoutes.exportToPDF(),
-      (req: Request, res: Response) => DelayHandler.delay(() => this.exportToPDF(req, res)),
+      (req: Request, res: Response) => this.exportToPDF(req, res),
     );
 
     Server.createEndpoint('GET',
       OrdersRoutes.exportToXLSX(),
-      (req: Request, res: Response) => DelayHandler.delay(() => this.exportToXLSX(req, res)),
+      (req: Request, res: Response) => this.exportToXLSX(req, res),
     );
   }
 
@@ -68,7 +69,7 @@ export class Orders {
 
   private static add(req: Request, res: Response): void {
     try {
-      const newItem = OrderSchema.order().parse({
+      const newItem = OrdersSchema.order().parse({
         id: uuidv4(),
         ...req.body,
       });
@@ -88,7 +89,7 @@ export class Orders {
     if (index === -1) return ErrorHandler.handleNotFound(res);
 
     try {
-      const updatedItem = OrderSchema.updateOrder().parse(req.body);
+      const updatedItem = OrdersSchema.updateOrder().parse(req.body);
       this.list[index] = <OrderInterface><unknown>{
         id,
         ...updatedItem,
@@ -117,19 +118,25 @@ export class Orders {
 
     const doc = new PDFDocument();
 
-    doc.fontSize(18).font(fontBoldPath).text('Lista zamówień', { align: 'center' }).moveDown();
+    doc.fontSize(18).font(fontBoldPath).text('Orders', { align: 'center' }).moveDown();
     doc.fontSize(11).font(fontRegularPath);
 
-    this.list.forEach((driver) => {
-      doc.text(`ID: ${driver.id}`);
-      doc.text(`Miejsce odbioru: ${driver.pickupLocation}`);
-      doc.text(`Miejsce dostawy: ${driver.deliveryLocation}`);
-      doc.text(`Opis ładunku: ${driver.cargoDescription}`);
-      doc.text(`Czas odbioru: ${driver.pickupTime}`);
-      doc.text(`Czas dostawy: ${driver.deliveryTime}`);
-      doc.text(`Status: ${driver.status}`);
-      doc.text(`Pojazd: ${driver.vehicleId}`);
-      doc.text(`Kierowca: ${driver.driverId}`);
+
+    this.list.forEach((order) => {
+      const findVehicle = Vehicles.list.find((vehicle) => vehicle.id === order.vehicleId);
+      const findDriver = Drivers.list.find((driver) => driver.id === order.driverId);
+
+      doc.text(`ID: ${order.id}`);
+      doc.text(`Pickup Location: ${order.pickupLocation}`);
+      doc.text(`Delivery Location: ${order.deliveryLocation}`);
+      doc.text(`Cargo Description: ${order.cargoDescription}`);
+      doc.text(`Pickup Time: ${order.pickupTime}`);
+      doc.text(`Delivery Time: ${order.deliveryTime}`);
+      doc.text(`Status: ${order.status}`);
+      doc.text(`Vehicle Id: ${order.vehicleId}`);
+      doc.text(`Driver Id: ${order.driverId}`);
+      doc.text(`Vehicle: ${findVehicle.brand} ${findVehicle.model}`);
+      doc.text(`Driver: ${findDriver.firstName} ${findDriver.lastName}`);
       doc.moveDown();
     });
 
@@ -156,17 +163,19 @@ export class Orders {
         firstSheet: 0, activeTab: 1, visibility: 'visible'
       }
     ];
-    const worksheet = workbook.addWorksheet('Pojazdy');
+    const worksheet = workbook.addWorksheet('Orders');
     worksheet.columns = [
       { header: 'ID', key: 'id' },
-      { header: 'Miejsce odbioru', key: 'pickupLocation' },
-      { header: 'Miejsce dostawy', key: 'deliveryLocation' },
-      { header: 'Opis ładunku', key: 'cargoDescription' },
-      { header: 'Czas odbioru', key: 'pickupTime' },
-      { header: 'Czas dostawy', key: 'deliveryTime' },
+      { header: 'Pickup Location', key: 'pickupLocation' },
+      { header: 'Delivery Location', key: 'deliveryLocation' },
+      { header: 'Cargo Description', key: 'cargoDescription' },
+      { header: 'Pickup Time', key: 'pickupTime' },
+      { header: 'Delivery Time', key: 'deliveryTime' },
       { header: 'Status', key: 'status' },
-      { header: 'Pojazd', key: 'vehicleId' },
-      { header: 'Kierowca', key: 'driverId' },
+      { header: 'Vehicle Id', key: 'vehicleId' },
+      { header: 'Driver Id', key: 'driverId' },
+      { header: 'Vehicle', key: 'vehicle' },
+      { header: 'Driver', key: 'driver' },
     ];
 
     this.list.forEach(({
@@ -180,6 +189,9 @@ export class Orders {
        vehicleId,
        driverId,
     }) => {
+      const findVehicle = Vehicles.list.find((vehicle) => vehicle.id === vehicleId);
+      const findDriver = Drivers.list.find((driver) => driver.id === driverId);
+
       worksheet.addRow({
         id,
         pickupLocation,
@@ -190,6 +202,8 @@ export class Orders {
         status,
         vehicleId,
         driverId,
+        vehicle: `${findVehicle.brand} ${findVehicle.model}`,
+        driver: `${findDriver.firstName} ${findDriver.lastName}`,
       });
     });
 

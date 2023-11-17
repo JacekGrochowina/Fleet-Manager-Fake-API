@@ -3,13 +3,13 @@ import { VehiclesRoutes } from './vehicles-routes.js';
 import { Request, Response } from 'express';
 import { VehicleInterface, VEHICLES_DATA } from './vehicles-data.js';
 import { ErrorHandler } from '../../shared/services/error-handler.js';
-import { VehicleSchema } from './schemas/vehicle.schema.js';
+import { VehiclesSchema } from './vehicles-schema.js';
 import { v4 as uuidv4 } from 'uuid';
 import { SuccessHandler } from '../../shared/services/success-handler.js';
-import { DelayHandler } from '../../shared/services/delay-handler.js';
 import { ApiParamsBuilder } from '../../shared/services/api-params-builder.js';
 import PDFDocument from 'pdfkit';
 import Excel from 'exceljs';
+import { Drivers } from '../drivers/drivers.js';
 
 export class Vehicles {
   public static list: VehicleInterface[] = VEHICLES_DATA;
@@ -17,37 +17,37 @@ export class Vehicles {
   public static routes(): void {
     Server.createEndpoint('GET',
       VehiclesRoutes.getList(),
-      (req: Request, res: Response) => DelayHandler.delay(() => this.getList(req, res)),
+      (req: Request, res: Response) => this.getList(req, res),
     );
 
     Server.createEndpoint('GET',
       VehiclesRoutes.getDetails(),
-      (req: Request, res: Response) => DelayHandler.delay(() => this.getDetails(req, res)),
+      (req: Request, res: Response) => this.getDetails(req, res),
     );
 
     Server.createEndpoint('POST',
       VehiclesRoutes.add(),
-      (req: Request, res: Response) => DelayHandler.delay(() => this.add(req, res)),
+      (req: Request, res: Response) => this.add(req, res),
     );
 
     Server.createEndpoint('PUT',
       VehiclesRoutes.update(),
-      (req: Request, res: Response) => DelayHandler.delay(() => this.update(req, res)),
+      (req: Request, res: Response) => this.update(req, res),
     );
 
     Server.createEndpoint('DELETE',
       VehiclesRoutes.remove(),
-      (req: Request, res: Response) => DelayHandler.delay(() => this.remove(req, res)),
+      (req: Request, res: Response) => this.remove(req, res),
     );
 
     Server.createEndpoint('GET',
       VehiclesRoutes.exportToPDF(),
-      (req: Request, res: Response) => DelayHandler.delay(() => this.exportToPDF(req, res)),
+      (req: Request, res: Response) => this.exportToPDF(req, res),
     );
 
     Server.createEndpoint('GET',
       VehiclesRoutes.exportToXLSX(),
-      (req: Request, res: Response) => DelayHandler.delay(() => this.exportToXLSX(req, res)),
+      (req: Request, res: Response) => this.exportToXLSX(req, res),
     );
   }
 
@@ -68,7 +68,7 @@ export class Vehicles {
 
   private static add(req: Request, res: Response): void {
     try {
-      const newItem = VehicleSchema.vehicle().parse({
+      const newItem = VehiclesSchema.vehicle().parse({
         id: uuidv4(),
         ...req.body,
       });
@@ -88,7 +88,7 @@ export class Vehicles {
     if (index === -1) return ErrorHandler.handleNotFound(res);
 
     try {
-      const updatedItem = VehicleSchema.updateVehicle().parse(req.body);
+      const updatedItem = VehiclesSchema.updateVehicle().parse(req.body);
       this.list[index] = <VehicleInterface><unknown>{ id, ...updatedItem };
       SuccessHandler.handleOk(res);
     } catch (error) {
@@ -114,18 +114,21 @@ export class Vehicles {
 
     const doc = new PDFDocument();
 
-    doc.fontSize(18).font(fontBoldPath).text('Lista pojazdów', { align: 'center' }).moveDown();
+    doc.fontSize(18).font(fontBoldPath).text('Vehicles', { align: 'center' }).moveDown();
     doc.fontSize(11).font(fontRegularPath);
 
     this.list.forEach((vehicle) => {
+      const findDriver = Drivers.list.find((driver) => driver.id === vehicle.driverId);
+
       doc.text(`ID: ${vehicle.id}`);
-      doc.text(`Marka: ${vehicle.brand}`);
+      doc.text(`Brand: ${vehicle.brand}`);
       doc.text(`Model: ${vehicle.model}`);
-      doc.text(`Rok produkcji: ${vehicle.year}`);
-      doc.text(`Numer rejestracyjny: ${vehicle.registrationNumber}`);
-      doc.text(`Typ: ${vehicle.type}`);
+      doc.text(`Year of Manufacture: ${vehicle.year}`);
+      doc.text(`Registration Number: ${vehicle.registrationNumber}`);
+      doc.text(`Type: ${vehicle.type}`);
       doc.text(`Status: ${vehicle.status}`);
-      doc.text(`Kierowca: ${vehicle.driverId}`);
+      doc.text(`Driver Id: ${vehicle.driverId}`);
+      doc.text(`Driver: ${findDriver.firstName} ${findDriver.lastName}`);
       doc.moveDown();
     });
 
@@ -152,16 +155,17 @@ export class Vehicles {
         firstSheet: 0, activeTab: 1, visibility: 'visible'
       }
     ];
-    const worksheet = workbook.addWorksheet('Pojazdy');
+    const worksheet = workbook.addWorksheet('Vehicles');
     worksheet.columns = [
       { header: 'ID', key: 'id' },
-      { header: 'Marka', key: 'brand' },
+      { header: 'Brand', key: 'brand' },
       { header: 'Model', key: 'model' },
-      { header: 'Rok produkcji', key: 'year' },
-      { header: 'Numer rejestracyjny', key: 'registrationNumber' },
-      { header: 'Typ: prawa jazdy', key: 'type' },
+      { header: 'Year of Manufacture', key: 'year' },
+      { header: 'Registration Number', key: 'registrationNumber' },
+      { header: 'Type', key: 'type' },
       { header: 'Status', key: 'status' },
-      { header: 'Kierowca', key: 'driverId' },
+      { header: 'Driver Id', key: 'driverId' },
+      { header: 'Driver', key: 'driver' },
     ];
 
     this.list.forEach(({
@@ -174,6 +178,8 @@ export class Vehicles {
        status,
        driverId,
     }) => {
+      const findDriver = Drivers.list.find((driver) => driver.id === driverId);
+
       worksheet.addRow({
         id,
         brand,
@@ -183,6 +189,7 @@ export class Vehicles {
         type,
         status,
         driverId,
+        driver: `${findDriver.firstName} ${findDriver.lastName}`,
       });
     });
 
