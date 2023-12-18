@@ -63,6 +63,10 @@ export class Auth {
       .header('auth-token', token)
       .status(HttpStatusCode.OK)
       .send({
+        id: user.id,
+        name: user.name,
+        surname: user.surname,
+        email: user.email,
         jwt: token,
       });
   }
